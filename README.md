@@ -1,19 +1,19 @@
 # Home Assistant Countdown
 
-A Home Screens plugin that counts down to the next departure in a Home Assistant
-sensor's `schedule` attribute. Out of the box it watches `sensor.calendar_text_announce`
-and expects an attribute like:
+A Home Screens plugin that counts down to the time in a Home Assistant timestamp
+sensor, and can show the event's name with it. Out of the box it watches
+`sensor.calendar_next_departure` and expects something like:
 
 ```yaml
-schedule:
-  - departure: "2026-11-21T09:00:00-06:00"
-  - departure: "2026-11-21T09:30:00-06:00"
+state: "2026-11-23T13:55:00+00:00"
+attributes:
+  event: "Simon Swim"
 ```
 
-It counts down to the soonest departure still ahead. When one leaves, the finished text
-shows for a minute and then the countdown moves to the next. The list may be a real list
-or a JSON string, and times may be ISO strings or epoch seconds or milliseconds; entries
-without a readable time are skipped. The sensor's own state is not used.
+The countdown uses the sensor's state. The name comes from the `event` attribute and
+can be turned off with **Show the event's name**. When the time comes, the finished
+text shows for a minute; after that the card shows the empty text until Home Assistant
+moves the sensor on to the next departure.
 
 ## Setup
 
@@ -28,14 +28,13 @@ without a readable time are skipped. The sensor's own state is not used.
 
 | Field | Default | What it does |
 |---|---|---|
-| `entityId` | `sensor.calendar_text_announce` | Sensor that holds the schedule |
-| `scheduleAttribute` | `schedule` | Attribute holding the list of departures |
-| `departureKey` | `departure` | Field in each list item that holds its time |
+| `entityId` | `sensor.calendar_next_departure` | Timestamp sensor to count down to |
 | `refreshSeconds` | 60 | How often to ask Home Assistant for the time (the countdown itself ticks every second) |
 | `title` | empty | Heading; empty uses the sensor's friendly name |
 | `finishedText` | `It's time!` | Shown for a minute after a departure leaves |
-| `emptyText` | `Nothing coming up` | Shown when the schedule is empty or every departure has left |
-| `titlePosition` | `above` | `above` puts the title over the clock; `left` puts it (and the date) to the left of the clock |
+| `emptyText` | `Nothing coming up` | Shown when the sensor has no time, or a minute after it passes |
+| `titlePosition` | `above` | `above` puts the title over the clock; `left` puts it (with the event and the date) to the left of the clock |
+| `showEvent` | on | Show the event's name from the sensor's `event` attribute |
 | `showSeconds` | on | Show the seconds column |
 | `showTarget` | on | Show the date and time under the countdown |
 

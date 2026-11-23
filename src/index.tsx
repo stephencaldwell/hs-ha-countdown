@@ -6,21 +6,22 @@ import {
   isEntityId,
   normalizeServerUrl,
   pad2,
-  nextDeparture,
-  scheduleDepartures,
+  activeTarget,
+  eventName,
+  parseTarget,
   remaining,
   roundUpToMinute,
   type HaState,
 } from './countdown';
 
 const PLUGIN_ID = 'hs-ha-countdown';
-const DEFAULT_ENTITY = 'sensor.calendar_text_announce';
+const DEFAULT_ENTITY = 'sensor.calendar_next_departure';
 
 type Problem = 'no-server' | 'bad-sensor' | 'token' | 'not-found' | 'unreachable';
 
 const PROBLEM_TEXT: Record<Problem, string> = {
   'no-server': 'Add your Home Assistant address in Plugin settings',
-  'bad-sensor': 'Pick a sensor like sensor.calendar_text_announce',
+  'bad-sensor': 'Pick a sensor like sensor.calendar_next_departure',
   token: 'Home Assistant did not accept the access token',
   'not-found': 'Home Assistant has no sensor with that name',
   unreachable: 'Can’t reach Home Assistant right now',
@@ -131,21 +132,14 @@ export default function HaCountdown({ config, style }: PluginComponentProps) {
     ? config.emptyText.trim()
     : 'Nothing coming up';
 
-  const scheduleAttribute = typeof config.scheduleAttribute === 'string' && config.scheduleAttribute.trim()
-    ? config.scheduleAttribute.trim()
-    : 'schedule';
-  const departureKey = typeof config.departureKey === 'string' && config.departureKey.trim()
-    ? config.departureKey.trim()
-    : 'departure';
+  const showEvent = config.showEvent !== false;
 
   const { data, problem, loaded } = useEntityState(entityId, refreshMs);
   const now = useNow(1000);
   // Parsed once per answer from Home Assistant, not on every tick.
-  const departures = React.useMemo(
-    () => scheduleDepartures(data, scheduleAttribute, departureKey),
-    [data, scheduleAttribute, departureKey],
-  );
-  const target = nextDeparture(departures, now);
+  const departure = React.useMemo(() => parseTarget(data?.state), [data]);
+  const target = activeTarget(departure, now);
+  const event = showEvent && target ? eventName(data) : null;
   const heading = title || entityLabel(data, entityId);
 
   const titleLeft = config.titlePosition === 'left';
@@ -168,6 +162,7 @@ export default function HaCountdown({ config, style }: PluginComponentProps) {
       return (
         <div style={frame}>
           <div style={{ fontSize: '1em', fontWeight: 600 }}>{heading}</div>
+          {event && <div style={{ fontSize: '1.2em', fontWeight: 600, lineHeight: 1.15 }}>{event}</div>}
           {main}
           {footnote}
         </div>
@@ -177,6 +172,7 @@ export default function HaCountdown({ config, style }: PluginComponentProps) {
       <div style={frame}>
         <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '0.3em' }}>
           <div style={{ fontSize: '1.3em', fontWeight: 600, lineHeight: 1.15, overflowWrap: 'anywhere' }}>{heading}</div>
+          {event && <div style={{ fontSize: '1em', fontWeight: 500, lineHeight: 1.2, overflowWrap: 'anywhere' }}>{event}</div>}
           {footnote}
         </div>
         <div style={{ flex: '0 0 auto', display: 'flex', justifyContent: 'flex-end' }}>{main}</div>

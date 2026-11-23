@@ -2,7 +2,7 @@
   "id": "hs-ha-countdown",
   "name": "Home Assistant Countdown",
   "version": "1.0.0",
-  "description": "Counts down to the next departure in a Home Assistant sensor's schedule.",
+  "description": "Counts down to the time in a Home Assistant timestamp sensor, with the event's name.",
   "author": "stephencaldwell",
   "license": "MIT",
   "minAppVersion": "1.15.0",
@@ -10,12 +10,11 @@
   "category": "Time & Date",
   "icon": "timer",
   "defaultConfig": {
-    "entityId": "sensor.calendar_text_announce",
-    "scheduleAttribute": "schedule",
-    "departureKey": "departure",
+    "entityId": "sensor.calendar_next_departure",
     "title": "",
     "showSeconds": true,
     "showTarget": true,
+    "showEvent": true,
     "finishedText": "It's time!",
     "emptyText": "Nothing coming up",
     "refreshSeconds": 60,
@@ -57,25 +56,9 @@
       "entityId": {
         "type": "string",
         "title": "Sensor",
-        "description": "The Home Assistant sensor that holds the schedule.",
+        "description": "The Home Assistant timestamp sensor to count down to.",
         "ui:widget": "text",
-        "ui:placeholder": "sensor.calendar_text_announce",
-        "ui:group": "Sensor"
-      },
-      "scheduleAttribute": {
-        "type": "string",
-        "title": "Schedule attribute",
-        "description": "The sensor attribute holding the list of departures.",
-        "ui:widget": "text",
-        "ui:placeholder": "schedule",
-        "ui:group": "Sensor"
-      },
-      "departureKey": {
-        "type": "string",
-        "title": "Departure time field",
-        "description": "The field in each list item that holds its time.",
-        "ui:widget": "text",
-        "ui:placeholder": "departure",
+        "ui:placeholder": "sensor.calendar_next_departure",
         "ui:group": "Sensor"
       },
       "refreshSeconds": {
@@ -102,7 +85,7 @@
       },
       "emptyText": {
         "type": "string",
-        "title": "When no departures are left",
+        "title": "When nothing is coming up",
         "ui:widget": "text",
         "ui:group": "Text"
       },
@@ -123,6 +106,12 @@
       "showSeconds": {
         "type": "boolean",
         "title": "Show seconds",
+        "ui:widget": "toggle",
+        "ui:group": "Layout"
+      },
+      "showEvent": {
+        "type": "boolean",
+        "title": "Show the event's name",
         "ui:widget": "toggle",
         "ui:group": "Layout"
       },

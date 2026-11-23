@@ -78,47 +78,24 @@ export function pad2(n: number): string {
 }
 
 /** How long a departure that just passed keeps the wall on the finished text
- *  before the countdown moves on to the next one. */
+ *  before the card falls back to the empty text. */
 export const JUST_LEFT_MS = 60_000;
 
-/** One departure value as Home Assistant may hand it over: an ISO string, or
- *  epoch seconds or milliseconds. */
-function parseInstant(value: unknown): Date | null {
-  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
-    return new Date(value < 1e12 ? value * 1000 : value);
-  }
-  return typeof value === 'string' ? parseTarget(value) : null;
+/** The departure to count down to: the sensor's time, kept for a minute
+ *  after it passes so the finished text gets its moment, then null until
+ *  Home Assistant moves the sensor on to the next one. */
+export function activeTarget(target: Date | null, now: Date): Date | null {
+  if (!target) return null;
+  return target.getTime() > now.getTime() - JUST_LEFT_MS ? target : null;
 }
 
-/** Every departure in the entity's schedule attribute, soonest first. The
- *  attribute is normally a list already; a template sensor can also store it
- *  as a JSON string, so that is accepted too. Entries without a readable time
- *  are skipped rather than failing the whole list. */
-export function scheduleDepartures(
-  data: HaState | null,
-  attribute = 'schedule',
-  key = 'departure',
-): Date[] {
-  let list: unknown = data?.attributes?.[attribute];
-  if (typeof list === 'string') {
-    try { list = JSON.parse(list); } catch { return []; }
-  }
-  if (!Array.isArray(list)) return [];
-  const out: Date[] = [];
-  for (const entry of list) {
-    if (!entry || typeof entry !== 'object') continue;
-    const when = parseInstant((entry as Record<string, unknown>)[key]);
-    if (when) out.push(when);
-  }
-  return out.sort((a, b) => a.getTime() - b.getTime());
-}
-
-/** The departure to count down to: the soonest one still ahead, or one that
- *  left under a minute ago so the finished text gets its moment. Null when
- *  nothing is left. */
-export function nextDeparture(departures: Date[], now: Date): Date | null {
-  const cutoff = now.getTime() - JUST_LEFT_MS;
-  return departures.find((d) => d.getTime() > cutoff) ?? null;
+/** The event's name from the sensor's attributes (the `event` key by
+ *  default), or null when there is none to show. */
+export function eventName(data: HaState | null, key = 'event'): string | null {
+  const value = data?.attributes?.[key];
+  if (typeof value === 'string') return value.trim() || null;
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  return null;
 }
 
 /** The same time left, rounded up to a whole minute, for a countdown that

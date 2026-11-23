@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { entityLabel, isEntityId, nextDeparture, normalizeServerUrl, parseTarget, remaining, roundUpToMinute, scheduleDepartures } from './countdown';
+import { activeTarget, entityLabel, eventName, isEntityId, normalizeServerUrl, parseTarget, remaining, roundUpToMinute } from './countdown';
 
 describe('parseTarget', () => {
   it('reads an ISO timestamp with an offset', () => {
@@ -61,57 +61,35 @@ describe('entityLabel', () => {
   });
 });
 
-describe('scheduleDepartures', () => {
-  const data = (schedule: unknown) => ({ state: 'x', attributes: { schedule } });
+describe('activeTarget', () => {
+  const target = new Date('2026-11-23T13:55:00Z');
+  const at = (iso: string) => new Date(iso);
 
-  it('reads departure times from the schedule list, soonest first', () => {
-    const list = scheduleDepartures(data([
-      { departure: '2026-11-21T09:30:00-06:00', route: 'B' },
-      { departure: '2026-11-21T09:00:00-06:00', route: 'A' },
-    ]));
-    expect(list.map((d) => d.toISOString())).toEqual(['2026-11-21T15:00:00.000Z', '2026-11-21T15:30:00.000Z']);
+  it('counts down to the sensor time while it is ahead', () => {
+    expect(activeTarget(target, at('2026-11-23T13:00:00Z'))).toBe(target);
   });
 
-  it('accepts the list as a JSON string and epoch numbers', () => {
-    const list = scheduleDepartures(data(JSON.stringify([{ departure: 1795262400 }, { departure: 1795262400000 }])));
-    expect(list).toHaveLength(2);
-    expect(list[0].getTime()).toBe(1795262400000);
+  it('holds the time for a minute after it passes, then lets go', () => {
+    expect(activeTarget(target, at('2026-11-23T13:55:59Z'))).toBe(target);
+    expect(activeTarget(target, at('2026-11-23T13:56:00Z'))).toBeNull();
   });
 
-  it('skips entries without a readable departure', () => {
-    const list = scheduleDepartures(data([{ departure: 'unknown' }, { other: 1 }, null, 'x', { departure: '2026-11-21T09:00:00Z' }]));
-    expect(list).toHaveLength(1);
-  });
-
-  it('is empty when the attribute is missing or not a list', () => {
-    expect(scheduleDepartures(null)).toEqual([]);
-    expect(scheduleDepartures(data(undefined))).toEqual([]);
-    expect(scheduleDepartures(data('not json'))).toEqual([]);
-    expect(scheduleDepartures(data({ departure: '2026-11-21T09:00:00Z' }))).toEqual([]);
-  });
-
-  it('honours a different attribute and key', () => {
-    const d = { attributes: { trains: [{ leaves: '2026-11-21T09:00:00Z' }] } };
-    expect(scheduleDepartures(d, 'trains', 'leaves')).toHaveLength(1);
+  it('is null when the sensor has no time', () => {
+    expect(activeTarget(null, target)).toBeNull();
   });
 });
 
-describe('nextDeparture', () => {
-  const at = (iso: string) => new Date(iso);
-  const list = [at('2026-11-21T09:00:00Z'), at('2026-11-21T09:30:00Z')];
-
-  it('picks the soonest departure still ahead', () => {
-    expect(nextDeparture(list, at('2026-11-21T08:00:00Z'))?.toISOString()).toBe('2026-11-21T09:00:00.000Z');
+describe('eventName', () => {
+  it('reads the event attribute', () => {
+    expect(eventName({ state: 'x', attributes: { event: ' Simon Swim ' } })).toBe('Simon Swim');
+    expect(eventName({ attributes: { title: 'Piano' } }, 'title')).toBe('Piano');
   });
 
-  it('holds a departure for a minute after it leaves, then moves on', () => {
-    expect(nextDeparture(list, at('2026-11-21T09:00:59Z'))?.toISOString()).toBe('2026-11-21T09:00:00.000Z');
-    expect(nextDeparture(list, at('2026-11-21T09:01:00Z'))?.toISOString()).toBe('2026-11-21T09:30:00.000Z');
-  });
-
-  it('is null once every departure has gone', () => {
-    expect(nextDeparture(list, at('2026-11-21T10:00:00Z'))).toBeNull();
-    expect(nextDeparture([], at('2026-11-21T10:00:00Z'))).toBeNull();
+  it('is null when there is no usable name', () => {
+    expect(eventName(null)).toBeNull();
+    expect(eventName({ attributes: {} })).toBeNull();
+    expect(eventName({ attributes: { event: '  ' } })).toBeNull();
+    expect(eventName({ attributes: { event: { name: 'x' } } })).toBeNull();
   });
 });
 
