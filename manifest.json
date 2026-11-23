@@ -1,0 +1,148 @@
+{
+  "id": "hs-ha-countdown",
+  "name": "Home Assistant Countdown",
+  "version": "1.0.0",
+  "description": "Counts down to the next departure in a Home Assistant sensor's schedule.",
+  "author": "stephencaldwell",
+  "license": "MIT",
+  "minAppVersion": "1.15.0",
+  "moduleType": "ha-countdown",
+  "category": "Time & Date",
+  "icon": "timer",
+  "defaultConfig": {
+    "entityId": "sensor.calendar_text_announce",
+    "scheduleAttribute": "schedule",
+    "departureKey": "departure",
+    "title": "",
+    "showSeconds": true,
+    "showTarget": true,
+    "finishedText": "It's time!",
+    "emptyText": "Nothing coming up",
+    "refreshSeconds": 60,
+    "titlePosition": "above"
+  },
+  "defaultSize": {
+    "w": 600,
+    "h": 260
+  },
+  "defaultStyle": {
+    "fontSize": 24,
+    "padding": 20,
+    "backgroundColor": "rgba(0, 0, 0, 0.4)"
+  },
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "serverUrl": {
+        "type": "string",
+        "title": "Home Assistant address",
+        "description": "Where your Home Assistant lives, for example http://homeassistant.local:8123",
+        "ui:widget": "text",
+        "ui:placeholder": "http://homeassistant.local:8123"
+      }
+    }
+  },
+  "secrets": [
+    {
+      "key": "ha_token",
+      "label": "Long-lived access token",
+      "description": "Make one in Home Assistant under your profile, Security tab, Long-lived access tokens.",
+      "required": true,
+      "placeholder": "eyJ..."
+    }
+  ],
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "entityId": {
+        "type": "string",
+        "title": "Sensor",
+        "description": "The Home Assistant sensor that holds the schedule.",
+        "ui:widget": "text",
+        "ui:placeholder": "sensor.calendar_text_announce",
+        "ui:group": "Sensor"
+      },
+      "scheduleAttribute": {
+        "type": "string",
+        "title": "Schedule attribute",
+        "description": "The sensor attribute holding the list of departures.",
+        "ui:widget": "text",
+        "ui:placeholder": "schedule",
+        "ui:group": "Sensor"
+      },
+      "departureKey": {
+        "type": "string",
+        "title": "Departure time field",
+        "description": "The field in each list item that holds its time.",
+        "ui:widget": "text",
+        "ui:placeholder": "departure",
+        "ui:group": "Sensor"
+      },
+      "refreshSeconds": {
+        "type": "number",
+        "title": "Check for changes every (seconds)",
+        "minimum": 10,
+        "maximum": 600,
+        "ui:widget": "slider",
+        "ui:step": 10,
+        "ui:group": "Sensor"
+      },
+      "title": {
+        "type": "string",
+        "title": "Title",
+        "description": "Leave empty to use the sensor's name from Home Assistant.",
+        "ui:widget": "text",
+        "ui:group": "Text"
+      },
+      "finishedText": {
+        "type": "string",
+        "title": "When the time comes",
+        "ui:widget": "text",
+        "ui:group": "Text"
+      },
+      "emptyText": {
+        "type": "string",
+        "title": "When no departures are left",
+        "ui:widget": "text",
+        "ui:group": "Text"
+      },
+      "titlePosition": {
+        "type": "string",
+        "title": "Title position",
+        "enum": [
+          "above",
+          "left"
+        ],
+        "enumLabels": [
+          "Above the clock",
+          "Left of the clock"
+        ],
+        "ui:widget": "select",
+        "ui:group": "Layout"
+      },
+      "showSeconds": {
+        "type": "boolean",
+        "title": "Show seconds",
+        "ui:widget": "toggle",
+        "ui:group": "Layout"
+      },
+      "showTarget": {
+        "type": "boolean",
+        "title": "Show the date and time",
+        "ui:widget": "toggle",
+        "ui:group": "Layout"
+      }
+    }
+  },
+  "exports": {
+    "component": "default"
+  },
+  "permissions": [
+    "network",
+    "secrets",
+    "localNetwork"
+  ],
+  "allowedDomains": [
+    "*"
+  ]
+}

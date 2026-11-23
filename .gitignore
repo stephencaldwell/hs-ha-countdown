@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.DS_Store
+*.local
+
+# Claude Code working files — plans/specs/mockups are never committed
+.c*
+!.claude/
+.claude/*
+!.claude/commands/
+plugin.tar.gz
+plugin.tar.gz.sha256

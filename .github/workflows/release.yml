@@ -1,0 +1,61 @@
+name: Release
+
+# Every push to main builds and tests the plugin. When manifest.json carries a
+# version with no release yet, the packed plugin.tar.gz is published as release
+# v<version>, ready for "Install from URL" or the plugin registry.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - run: npm test
+
+      - name: Pack
+        run: |
+          npm run pack
+          tar -tzf plugin.tar.gz
+          sha256sum plugin.tar.gz | tee plugin.tar.gz.sha256
+
+      - name: Decide whether to publish
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/release-check.sh >> "$GITHUB_OUTPUT"
+
+      - name: Publish release
+        if: steps.check.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.check.outputs.version }}
+        run: |
+          sha=$(cut -d' ' -f1 plugin.tar.gz.sha256)
+          prerelease=()
+          case "$VERSION" in *-*) prerelease=(--prerelease) ;; esac
+          gh release create "v$VERSION" plugin.tar.gz plugin.tar.gz.sha256 \
+            --target "$GITHUB_SHA" \
+            --title "v$VERSION" \
+            --generate-notes \
+            "${prerelease[@]}" \
+            --notes "SHA-256 of plugin.tar.gz: \`$sha\`"
